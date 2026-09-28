@@ -20,10 +20,10 @@ lower the barrier to entry.
 ```sh
 mkdir -p ~/.local/share
 ssh-add
-git clone git@github.com:mkearns87/dotfiles.git ~/.local/share/chezmoi
+git clone git@github.com:dinklebop/dotfiles.git ~/.local/share/chezmoi
 cd ~/.local/share/chezmoi
 # checkout your own branch if you have one, before running this
-./scripts/bootstrap/macos.sh
+./scripts/bootstrap/macos_bootstrap.sh
 ```
 
 ## Making it your own
