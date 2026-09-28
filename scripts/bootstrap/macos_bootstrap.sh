@@ -52,11 +52,11 @@ cleanup_highlander() {
 }
 
 bootstrap_failure() {
-  local status=$?
+  local exit_code=$?
   if (( PAYLOAD_RUNNING == 0 )); then
     print_error "Bootstrap failed before repository initialization. Rerun: /bin/zsh <(curl -fsSL https://dinklebop.com)"
   fi
-  return $status
+  return $exit_code
 }
 
 trap cleanup_highlander EXIT
