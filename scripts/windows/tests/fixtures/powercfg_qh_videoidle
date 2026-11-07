@@ -1,0 +1,12 @@
+Power Scheme GUID: 381b4222-f694-41f0-9685-ff5bb260df2e  (Balanced)
+  GUID Alias: SCHEME_BALANCED
+  Subgroup GUID: 7516b95f-f776-4464-8c53-06167f40cc99  (Display)
+    GUID Alias: SUB_VIDEO
+    Power Setting GUID: 3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e  (Turn off display after)
+      GUID Alias: VIDEOIDLE
+      Minimum Possible Setting: 0x00000000
+      Maximum Possible Setting: 0xffffffff
+      Possible Settings increment: 0x00000001
+      Possible Settings units: Seconds
+    Current AC Power Setting Index: 0x0000012c
+    Current DC Power Setting Index: 0x000000b4

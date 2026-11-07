@@ -1,0 +1,13 @@
+{{ if eq .chezmoi.os "windows" -}}
+# Sets up SSH and RDP for one account on this PC; see scripts/windows/README.md.
+# chezmoi re-runs this when any of these hashes change:
+# setup-remote-access.ps1 {{ include "scripts/windows/setup-remote-access.ps1" | sha256sum }}
+# setup-ssh-user.ps1 {{ include "scripts/windows/setup-ssh-user.ps1" | sha256sum }}
+# enable-rdp.ps1 {{ include "scripts/windows/enable-rdp.ps1" | sha256sum }}
+# rdp-qr.ps1 {{ include "scripts/windows/rdp-qr.ps1" | sha256sum }}
+$ErrorActionPreference = 'Stop'
+# chezmoi may run this under PowerShell 7, whose module path breaks Windows PowerShell 5.1 children.
+$env:PSModulePath = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+& "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy Bypass -File "{{ .chezmoi.sourceDir }}/scripts/windows/setup-remote-access.ps1"
+exit $LASTEXITCODE
+{{ end -}}
