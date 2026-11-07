@@ -9,7 +9,7 @@ export XDG_CONFIG_HOME="$HOME/.config"
 export GNUPGHOME="$XDG_CONFIG_HOME/gnupg"
 export TRUSTED_GPGKEY_FINGREPRINT="77D8616541A323FF03E6639947BEA857F03AFE90"
 export PINENTRY_PROGRAM="/opt/homebrew/bin/pinentry-mac"
-export GIT_HIGHLANDER="https://raw.githubusercontent.com/dinklebop/dotfiles/init/scripts/bootstrap/highlander.asc"
+export GIT_HIGHLANDER="https://raw.githubusercontent.com/dinklebop/dotfiles/main/scripts/bootstrap/highlander.asc"
 export TOUCH_ID_TEMPLATE_FILE="/etc/pam.d/sudo_local.template"
 export TOUCH_ID_AUTH_FILE="/etc/pam.d/sudo_local"
 
