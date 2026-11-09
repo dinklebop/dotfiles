@@ -25,3 +25,15 @@ scripts
 
 # images
 images/**
+{{ if eq .chezmoi.os "windows" }}
+# macOS and zsh only; scripts/windows is applied through .chezmoiscripts.
+.config
+.config/**
+.local
+.local/**
+.ssh
+.ssh/**
+.zshenv
+Library
+Library/**
+{{ end }}

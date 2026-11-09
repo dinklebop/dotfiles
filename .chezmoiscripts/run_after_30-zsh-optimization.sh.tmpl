@@ -1,3 +1,4 @@
+{{- if (eq .chezmoi.os "darwin") -}}
 #!/bin/zsh
 # vim: set ft=zsh :
 
@@ -85,3 +86,4 @@ zcompile-many $XDG_DATA_HOME/zsh/plugins/fzf/**/*.zsh
 zcompile-many $XDG_CONFIG_HOME/zsh/**/*.zsh
 
 unfunction zcompile-many
+{{ end -}}

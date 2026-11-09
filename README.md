@@ -26,6 +26,43 @@ cd ~/.local/share/chezmoi
 ./scripts/bootstrap/macos_bootstrap.sh
 ```
 
+## Windows
+
+From an elevated Windows PowerShell or PowerShell 7 window (Run as
+administrator), with the YubiKey plugged in:
+
+```powershell
+irm https://dinklebop.com/bootstrap | iex
+```
+
+To test a branch:
+
+```powershell
+$env:DOTFILES_BRANCH = '<branch>'; irm https://raw.githubusercontent.com/dinklebop/dotfiles/<branch>/scripts/bootstrap/windows_bootstrap.ps1 | iex
+```
+
+[`windows_bootstrap.ps1`](scripts/bootstrap/windows_bootstrap.ps1) installs
+Gpg4win and chezmoi with winget when they're missing, imports the trusted GPG
+key, and decrypts `highlander-windows.asc` with the YubiKey (enter the PIN, and
+touch the YubiKey if it blinks). The decrypted payload runs
+`chezmoi init --apply` on this repo. On Windows, chezmoi applies only the
+remote-access setup: it picks an account on the PC, then sets up SSH and RDP
+for it. See [`scripts/windows/README.md`](scripts/windows/README.md).
+
+The script doesn't self-elevate; it stops if the window isn't elevated.
+
+### Bootstrap URLs (Cloudflare)
+
+| Request | User agent | Redirect | Target |
+| --- | --- | --- | --- |
+| `/bootstrap` | contains `PowerShell/` (ordered first) | 302 | `main/scripts/bootstrap/windows_bootstrap.ps1` |
+| `/bootstrap` | curl | 301 | `main/scripts/bootstrap/macos_bootstrap.sh` |
+| `/bootstrap.ps1` | any | 301 | `main/scripts/bootstrap/windows_bootstrap.ps1` |
+
+Targets are under `https://raw.githubusercontent.com/dinklebop/dotfiles/`.
+
+`curl.exe` on Windows gets the macOS script, so use `irm` there.
+
 ## Making it your own
 
 ### Creating your own branch
