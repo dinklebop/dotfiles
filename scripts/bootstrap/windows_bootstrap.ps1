@@ -49,18 +49,77 @@
         }
     }
 
+    function Invoke-WindowsPowerShell {
+        # Runs a command in Windows PowerShell 5.1, where the Appx cmdlets work, with the Machine
+        # module path so a PowerShell 7 parent's modules don't break the child. -EncodedCommand
+        # avoids quoting problems. Returns $true when the child exits 0.
+        param([Parameter(Mandatory)][string]$Command)
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($Command))
+        $savedModulePath = $env:PSModulePath
+        try {
+            $env:PSModulePath = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+            & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -NonInteractive -EncodedCommand $encoded | Out-Host
+            return $LASTEXITCODE -eq 0
+        } finally {
+            $env:PSModulePath = $savedModulePath
+        }
+    }
+
     function Get-Winget {
         $cmd = Get-Command winget.exe -ErrorAction SilentlyContinue
         if ($cmd) { return $cmd.Source }
         $path = Join-Path $env:LOCALAPPDATA 'Microsoft\WindowsApps\winget.exe'
         if (Test-Path -LiteralPath $path) { return $path }
-        throw 'winget not found; install App Installer from the Microsoft Store, then re-run.'
+
+        # On a freshly enrolled PC, App Installer is often staged but not yet registered for this
+        # user, so register it.
+        $register = 'Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe'
+        Write-Step 'winget not found; registering App Installer for this user...'
+        $registered = Invoke-WindowsPowerShell -Command $register
+        for ($i = 0; $registered -and $i -lt 10; $i++) {
+            if (Test-Path -LiteralPath $path) { return $path }
+            Start-Sleep -Seconds 1
+        }
+        throw "winget not found; install or update App Installer from the Microsoft Store, or run: $register"
+    }
+
+    function Install-WingetSource {
+        # This user has no winget source package, and winget can't install it itself from an
+        # elevated run-as session (AppX 0x80073D19, no logged-on user). Install Microsoft's
+        # package directly, refusing it unless Microsoft signed it.
+        Write-Step 'Installing the winget source package for this user...'
+        $msix = Join-Path ([IO.Path]::GetTempPath()) ('winget-source-' + [guid]::NewGuid().ToString('N') + '.msix')
+        try {
+            Invoke-WebRequest -UseBasicParsing 'https://cdn.winget.microsoft.com/cache/source.msix' -OutFile $msix
+            $sig = Get-AuthenticodeSignature -LiteralPath $msix
+            if ($sig.Status -ne 'Valid' -or $sig.SignerCertificate.Subject -notlike 'CN=Microsoft Corporation,*') {
+                throw "The downloaded winget source package is not signed by Microsoft ($($sig.Status)); not installing it."
+            }
+            if (-not (Invoke-WindowsPowerShell -Command ("Add-AppxPackage -Path '{0}'" -f $msix.Replace("'", "''")))) {
+                throw 'Could not install the winget source package; update App Installer from the Microsoft Store, then re-run.'
+            }
+        } finally {
+            Remove-Item -LiteralPath $msix -Force -ErrorAction SilentlyContinue
+        }
     }
 
     function Install-WingetPackage {
         param([Parameter(Mandatory)][string]$Id)
         Write-Step "Installing $Id with winget..."
-        & (Get-Winget) install --id $Id --exact --silent --accept-package-agreements --accept-source-agreements --disable-interactivity
+        $winget = Get-Winget
+        # On a freshly enrolled PC the source package is missing, and winget would fail with
+        # 0x8a15000f. Install it first, so a normal run shows no error.
+        if (-not (Invoke-WindowsPowerShell -Command 'if (Get-AppxPackage -Name Microsoft.Winget.Source) { exit 0 } else { exit 1 }')) {
+            Install-WingetSource
+        }
+        $installArgs = @('install', '--id', $Id, '--exact', '--silent', '--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity')
+        & $winget @installArgs
+        if ($LASTEXITCODE -eq -1978335217) {
+            # Backstop: 0x8a15000f, "Data required by the source is missing", even though the
+            # check passed. Reinstall the source package, then retry once.
+            Install-WingetSource
+            & $winget @installArgs
+        }
         if ($LASTEXITCODE -ne 0) { throw "winget install $Id failed ($LASTEXITCODE)." }
     }
 
